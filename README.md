@@ -1,6 +1,6 @@
 # markdown-reformatter
 
-*English | [Tiếng Việt](README.vi.md)*
+English | [Tiếng Việt](README.vi.md)
 
 Runs `markdownlint` (via `markdownlint-cli2`) inside Docker to automatically
 reformat/fix every `.md` file in a local folder, with no need to install
@@ -24,11 +24,12 @@ Node.js on your machine.
   only become fixable after another rule has already been fixed), then prints
   a report of any remaining issues it couldn't auto-fix.
 - `.markdownlint-cli2.jsonc.example` — the sample rule config (everything
-  enabled by default, with `MD013` line-length, `MD033` inline HTML, and
-  `MD040` fenced-code-language turned off, and `MD060` pinned to the
-  `compact` style). **The real `.markdownlint-cli2.jsonc` is gitignored** —
-  every clone gets its own local copy to customize without touching the
-  shared example (see [Customizing rules](#customizing-rules)).
+  enabled by default, with `MD013` line-length, `MD033` inline HTML,
+  `MD040` fenced-code-language, `MD025` multiple-headings, and `MD036`
+  emphasis-as-heading turned off, and `MD060` pinned to the `compact` style).
+  **The real `.markdownlint-cli2.jsonc` is gitignored** — every clone gets its
+  own local copy to customize, which in turn becomes the *default* used to
+  seed each linted folder's own config (see [Customizing rules](#customizing-rules)).
 - `run.ps1` / `run.sh` — run directly from the cloned folder (**Option 1** below).
 - `install.sh` / `install.ps1` — install the global `md-lint` command (**Option 2** below).
 - `uninstall.sh` / `uninstall.ps1` — undo whatever `install.sh`/`install.ps1`
@@ -127,14 +128,23 @@ If no path is given, it defaults to the current directory (`.`).
 
 ## Customizing rules
 
-Edit `.markdownlint-cli2.jsonc`:
+**Every folder you lint gets its own `.markdownlint-cli2.jsonc`**, right
+inside that folder:
 
-- **Option 1** (running from the clone): the file lives at the repo root.
-  The first time you run `run.sh`/`run.ps1`, it's created automatically from
-  `.markdownlint-cli2.jsonc.example` if missing — edit it freely, it's
-  gitignored so it won't get committed or overwritten by `git pull`.
-- **Option 2** (global `md-lint`): edit `~/.md-lint/.markdownlint-cli2.jsonc`
-  (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` on Windows).
+- If the folder being linted (the path you pass to `run.sh`/`run.ps1`/`md-lint`)
+  already has a `.markdownlint-cli2.jsonc`, it's used as-is — never overwritten.
+- If it doesn't, one is copied in automatically on first run, from the tool's
+  own default config:
+  - **Option 1** (running from the clone): the default lives at the repo
+    root. The first time you run `run.sh`/`run.ps1`, that root config is
+    itself created from `.markdownlint-cli2.jsonc.example` if missing.
+  - **Option 2** (global `md-lint`): the default lives at
+    `~/.md-lint/.markdownlint-cli2.jsonc` (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` on Windows).
+
+So different markdown folders can each have their own rules, and editing a
+folder's config after that first run only affects that folder. To change the
+*default* used for folders that don't have a config yet, edit the repo-root
+(Option 1) or `~/.md-lint` (Option 2) config instead — see the paths above.
 
 Full rule list: [markdownlint rules](https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md).
 No manual rebuild needed — `run.sh`/`run.ps1`/`md-lint` all run `docker build`
@@ -171,7 +181,10 @@ No manual rebuild needed — `run.sh`/`run.ps1`/`md-lint` all run `docker build`
 
 ## Notes
 
-- The container only overwrites files inside the mounted folder (`/data`) — nothing else is touched.
+- The container only touches files inside the folder you're linting — nothing
+  else is touched. That includes writing a `.markdownlint-cli2.jsonc` into
+  that folder on first run if it doesn't have one yet (see
+  [Customizing rules](#customizing-rules)).
 - Run with `--check` first before fixing for real if the markdown folder isn't backed up/committed yet.
 - Some issues (e.g. `MD040` fenced-code-language, if not disabled) can't be
   auto-fixed because the tool can't guess the code block's language — these

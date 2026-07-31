@@ -1,6 +1,6 @@
 # markdown-reformatter
 
-*[English](README.md) | Tiếng Việt*
+[English](README.md) | Tiếng Việt
 
 Chạy `markdownlint` (qua `markdownlint-cli2`) trong Docker để tự động reformat/fix
 toàn bộ file `.md` trong một thư mục local, không cần cài Node.js trên máy.
@@ -22,9 +22,11 @@ toàn bộ file `.md` trong một thư mục local, không cần cài Node.js tr
   sau khi rule khác đã sửa xong), rồi in báo cáo các lỗi còn lại (nếu không thể tự fix).
 - `.markdownlint-cli2.jsonc.example` — file cấu hình rule mẫu (mặc định bật
   hết, tắt `MD013` line-length, `MD033` inline HTML, `MD040` fenced-code-language,
-  và pin `MD060` về style `compact`). **Đã gitignore file `.markdownlint-cli2.jsonc`
-  thật** — mỗi người clone về tự có bản copy riêng để tuỳ chỉnh mà không đụng
-  vào file mẫu dùng chung (xem [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule)).
+  `MD025` multiple-headings, `MD036` emphasis-as-heading, và pin `MD060` về
+  style `compact`). **Đã gitignore file `.markdownlint-cli2.jsonc` thật** —
+  mỗi người clone về tự có bản copy riêng để tuỳ chỉnh, bản này lại chính là
+  config *mặc định* dùng để seed vào từng thư mục được lint (xem
+  [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule)).
 - `run.ps1` / `run.sh` — chạy trực tiếp từ thư mục clone (**Cách 1** bên dưới).
 - `install.sh` / `install.ps1` — cài lệnh `md-lint` dùng toàn cục (**Cách 2** bên dưới).
 - `uninstall.sh` / `uninstall.ps1` — gỡ những gì `install.sh`/`install.ps1` đã cài (xem [Gỡ cài đặt](#gỡ-cài-đặt)).
@@ -121,14 +123,24 @@ Không truyền path thì mặc định dùng thư mục hiện tại (`.`).
 
 ## Tuỳ chỉnh rule
 
-Sửa file `.markdownlint-cli2.jsonc`:
+**Mỗi thư mục bạn lint sẽ có `.markdownlint-cli2.jsonc` riêng**, nằm ngay
+trong thư mục đó:
 
-- **Cách 1** (chạy từ thư mục clone): file nằm ngay tại gốc repo. Lần chạy đầu
-  tiên `run.sh`/`run.ps1` sẽ tự tạo nó từ `.markdownlint-cli2.jsonc.example`
-  nếu chưa có — cứ sửa thoải mái, file này đã gitignore nên không bị commit/ghi
-  đè khi `git pull`.
-- **Cách 2** (`md-lint` toàn cục): sửa `~/.md-lint/.markdownlint-cli2.jsonc`
-  (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` trên Windows).
+- Nếu thư mục được lint (path bạn truyền cho `run.sh`/`run.ps1`/`md-lint`)
+  đã có sẵn `.markdownlint-cli2.jsonc`, nó được dùng nguyên vẹn — không bao
+  giờ bị ghi đè.
+- Nếu chưa có, lần chạy đầu tiên sẽ tự copy vào từ config **mặc định** của tool:
+  - **Cách 1** (chạy từ thư mục clone): config mặc định nằm ở gốc repo. Lần
+    chạy đầu tiên `run.sh`/`run.ps1` sẽ tự tạo config gốc đó từ
+    `.markdownlint-cli2.jsonc.example` nếu chưa có.
+  - **Cách 2** (`md-lint` toàn cục): config mặc định nằm ở
+    `~/.md-lint/.markdownlint-cli2.jsonc`
+    (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` trên Windows).
+
+Vậy nên mỗi thư mục markdown có thể có rule riêng, và sửa config của một thư
+mục sau lần chạy đầu chỉ ảnh hưởng đúng thư mục đó. Muốn đổi config **mặc
+định** dùng để seed cho các thư mục chưa có config, sửa file ở gốc repo
+(Cách 1) hoặc `~/.md-lint` (Cách 2) như trên.
 
 Danh sách rule đầy đủ: [markdownlint rules](https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md).
 Không cần build lại thủ công — `run.sh`/`run.ps1`/`md-lint` đều tự
@@ -162,7 +174,9 @@ Không cần build lại thủ công — `run.sh`/`run.ps1`/`md-lint` đều t�
 
 ## Lưu ý
 
-- Container chỉ ghi đè các file trong thư mục được mount (`/data`), không đụng tới file nào khác.
+- Container chỉ đụng vào file trong thư mục bạn đang lint, không đụng gì khác
+  — bao gồm cả việc tự ghi file `.markdownlint-cli2.jsonc` vào thư mục đó ở
+  lần chạy đầu nếu chưa có (xem [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule)).
 - Nên chạy thử với `--check` trước khi fix thật nếu thư mục markdown chưa được backup/commit.
 - Một số lỗi (ví dụ `MD040` fenced-code-language khi chưa tắt rule) không thể
   tự động fix vì tool không đoán được ngôn ngữ code block — các lỗi này sẽ

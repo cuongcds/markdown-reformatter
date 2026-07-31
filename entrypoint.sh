@@ -4,7 +4,16 @@
 # lint pass so any remaining (non-auto-fixable) issues are still reported.
 set -e
 
-CONFIG="/app/.markdownlint-cli2.jsonc"
+DEFAULT_CONFIG="/app/.markdownlint-cli2.jsonc"
+CONFIG="/data/.markdownlint-cli2.jsonc"
+
+# Use the target directory's own config if it already has one; otherwise seed
+# it with a copy of the default so the target folder ends up with its own
+# editable config too (instead of always using a config outside /data).
+if [ ! -f "$CONFIG" ]; then
+  cp "$DEFAULT_CONFIG" "$CONFIG"
+  echo "No .markdownlint-cli2.jsonc in the target directory -- copied the default one there." >&2
+fi
 
 if [ "$1" = "--check" ]; then
   shift
