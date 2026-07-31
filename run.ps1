@@ -24,8 +24,14 @@ if (-not (Test-Path $configPath)) {
 
 # Use this script's own directory as the Docker build context, so it works
 # regardless of the caller's current directory.
-docker build -t markdown-reformatter $PSScriptRoot
-if (-not $?) { exit 1 }
+# Swallow the Docker build log (noisy buildkit output) -- only show it if the
+# build actually fails, so the lint output below isn't buried under it.
+docker build -t markdown-reformatter $PSScriptRoot *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Docker build failed -- re-running to show the error:"
+    docker build -t markdown-reformatter $PSScriptRoot
+    exit 1
+}
 
 if ($Check) {
     docker run --rm -v "${resolved}:/data" markdown-reformatter --check "**/*.md"

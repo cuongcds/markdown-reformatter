@@ -34,7 +34,13 @@ if command -v cygpath >/dev/null 2>&1; then
   PROJECT_DIR="$(cygpath -m "$PROJECT_DIR")"
 fi
 
-docker build -t markdown-reformatter "$PROJECT_DIR"
+# Swallow the Docker build log (noisy buildkit output) -- only show it if the
+# build actually fails, so the lint output below isn't buried under it.
+if ! BUILD_LOG=$(docker build -t markdown-reformatter "$PROJECT_DIR" 2>&1); then
+  echo "$BUILD_LOG" >&2
+  echo "Error: Docker build failed." >&2
+  exit 1
+fi
 
 if [ "$MODE" = "--check" ]; then
   docker run --rm -v "${RESOLVED}:/data" markdown-reformatter --check "**/*.md"
