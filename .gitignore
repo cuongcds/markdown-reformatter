@@ -1,0 +1,5 @@
+# Local config -- each clone/user customizes their own from .markdownlint-cli2.jsonc.example
+.markdownlint-cli2.jsonc
+
+node_modules/
+docs_test/

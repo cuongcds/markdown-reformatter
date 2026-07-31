@@ -1,0 +1,14 @@
+{
+  "name": "markdown-reformatter",
+  "version": "1.0.0",
+  "description": "Reformat/fix Markdown files in a directory using markdownlint",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "lint": "markdownlint-cli2 \"/data/**/*.md\"",
+    "fix": "markdownlint-cli2 --fix \"/data/**/*.md\""
+  },
+  "dependencies": {
+    "markdownlint-cli2": "^0.23.2"
+  }
+}

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Global wrapper for markdown-reformatter: reformat/lint a local Markdown
+# folder using markdownlint, running inside Docker.
+#
+# Usage:
+#   md-lint [path] [--check]
+#   path defaults to the current directory.
+set -euo pipefail
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: Docker not found on PATH. Install Docker Desktop/Engine first: https://docs.docker.com/get-docker/" >&2
+  exit 1
+fi
+
+# Installed (by install.sh/install.ps1) alongside a copy of the Docker project
+# files at $HOME/.md-lint -- this is what makes `md-lint` runnable from any
+# directory, on any user account, without depending on where the repo was cloned.
+PROJECT_DIR="$HOME/.md-lint"
+
+if [ ! -f "$PROJECT_DIR/Dockerfile" ]; then
+  echo "Error: $PROJECT_DIR not set up. Run install.sh/install.ps1 from the markdown-reformatter repo first." >&2
+  exit 1
+fi
+
+# Bootstrap the config from the tracked example if it's missing (e.g. deleted
+# by hand) -- never overwrite an existing customized config.
+if [ ! -f "$PROJECT_DIR/.markdownlint-cli2.jsonc" ] && [ -f "$PROJECT_DIR/.markdownlint-cli2.jsonc.example" ]; then
+  cp "$PROJECT_DIR/.markdownlint-cli2.jsonc.example" "$PROJECT_DIR/.markdownlint-cli2.jsonc"
+  echo "Created $PROJECT_DIR/.markdownlint-cli2.jsonc from the example -- edit it to customize rules." >&2
+fi
+
+TARGET_DIR="${1:-.}"
+MODE="${2:-}"
+
+RESOLVED="$(cd "$TARGET_DIR" && pwd)"
+
+# On Git Bash/MSYS (Windows), Docker Desktop needs a native Windows path (C:/...)
+# for -v bind mounts -- the MSYS-style /c/... path silently mounts an empty dir.
+if command -v cygpath >/dev/null 2>&1; then
+  RESOLVED="$(cygpath -m "$RESOLVED")"
+fi
+
+docker build -t markdown-reformatter "$PROJECT_DIR" >&2
+
+if [ "$MODE" = "--check" ]; then
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter --check "**/*.md"
+else
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter "**/*.md"
+fi
