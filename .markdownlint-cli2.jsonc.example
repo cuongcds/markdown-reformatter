@@ -1,22 +1,24 @@
 {
-  // Default markdownlint rules, with a couple relaxed for common real-world docs.
   "config": {
     "default": true,
     "MD022": true,
-    "MD060": {"style": "compact"},
-    "MD013": false, // line-length: don't force wrapping long lines
-    "MD033": false,  // allow inline HTML in markdown
+    "MD060": {
+      "style": "compact"
+    },
+    "MD013": false,
+    "MD033": false,
     "MD040": false,
-    // No auto-fix support in markdownlint for these two -- fixing them requires
-    // a judgment call (which heading to demote / promote to a real heading),
-    // so leaving them enabled would just report the same unfixable errors forever.
-    "MD036": false, // emphasis-as-heading
-    "MD025": false // multiple top-level headings
+    "MD041": false,
+    "MD036": false,
+    "MD025": false
   },
   "globs": [
     "**/*.md"
   ],
   "ignores": [
-    "**/node_modules/**"
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/system/**",
+    "**/vendor/**"
   ]
 }
