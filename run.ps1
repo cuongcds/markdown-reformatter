@@ -4,7 +4,13 @@ param(
     [string]$Path,
 
     # Only report lint issues, without auto-fixing them.
-    [switch]$Check
+    [switch]$Check,
+
+    # If the target folder has no .markdownlint-cli2.jsonc yet, seed it from
+    # the default config AND lint right away with it. Without -Force, a
+    # missing config is only seeded -- the run stops there so you can
+    # review/edit it first.
+    [switch]$Force
 )
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
@@ -33,8 +39,10 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+$forceArg = if ($Force) { "--force" } else { $null }
+
 if ($Check) {
-    docker run --rm -v "${resolved}:/data" markdown-reformatter --check "**/*.md"
+    docker run --rm -v "${resolved}:/data" markdown-reformatter $forceArg --check "**/*.md"
 } else {
-    docker run --rm -v "${resolved}:/data" markdown-reformatter "**/*.md"
+    docker run --rm -v "${resolved}:/data" markdown-reformatter $forceArg "**/*.md"
 }

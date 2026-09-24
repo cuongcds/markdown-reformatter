@@ -7,12 +7,22 @@ set -e
 DEFAULT_CONFIG="/app/.markdownlint-cli2.jsonc"
 CONFIG="/data/.markdownlint-cli2.jsonc"
 
+FORCE=0
+if [ "$1" = "--force" ]; then
+  FORCE=1
+  shift
+fi
+
 # Use the target directory's own config if it already has one; otherwise seed
 # it with a copy of the default so the target folder ends up with its own
 # editable config too (instead of always using a config outside /data).
 if [ ! -f "$CONFIG" ]; then
   cp "$DEFAULT_CONFIG" "$CONFIG"
-  echo "No .markdownlint-cli2.jsonc in the target directory -- copied the default one there." >&2
+  if [ "$FORCE" -eq 0 ]; then
+    echo "No .markdownlint-cli2.jsonc in the target directory -- copied the default one there. Edit it, then re-run (or pass --force to lint now with the copied config)." >&2
+    exit 0
+  fi
+  echo "No .markdownlint-cli2.jsonc in the target directory -- copied the default one there and continuing (--force)." >&2
 fi
 
 if [ "$1" = "--check" ]; then

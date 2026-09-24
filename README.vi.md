@@ -49,6 +49,9 @@ chmod +x run.sh
 
 # Chỉ kiểm tra, không sửa
 ./run.sh /absolute/path/to/markdown/folder --check
+
+# Thư mục chưa có .markdownlint-cli2.jsonc: seed file rồi lint luôn
+./run.sh /absolute/path/to/markdown/folder --force
 ```
 
 ### Cách 1 — PowerShell (Windows)
@@ -62,6 +65,9 @@ cd markdown-reformatter
 
 # Chỉ kiểm tra lỗi, không sửa
 .\run.ps1 -Path "C:\path\to\markdown\folder" -Check
+
+# Thư mục chưa có .markdownlint-cli2.jsonc: seed file rồi lint luôn
+.\run.ps1 -Path "C:\path\to\markdown\folder" -Force
 ```
 
 `run.sh`/`run.ps1` tự dùng thư mục chứa chính nó làm Docker build context, nên
@@ -111,12 +117,16 @@ md-lint ./
 # Chỉ định thư mục khác, hoặc chỉ kiểm tra
 md-lint /path/to/other/folder
 md-lint ./ --check
+
+# Thư mục chưa có .markdownlint-cli2.jsonc: seed file rồi lint luôn
+md-lint ./ --force
 ```
 
 ```powershell
 # PowerShell — tương đương (md-lint.cmd tự gọi bash bên dưới)
 md-lint .\
 md-lint .\ --check
+md-lint .\ --force
 ```
 
 Không truyền path thì mặc định dùng thư mục hiện tại (`.`).
@@ -128,17 +138,22 @@ trong thư mục đó:
 
 - Nếu thư mục được lint (path bạn truyền cho `run.sh`/`run.ps1`/`md-lint`)
   đã có sẵn `.markdownlint-cli2.jsonc`, nó được dùng nguyên vẹn — không bao
-  giờ bị ghi đè.
-- Nếu chưa có, lần chạy đầu tiên sẽ tự copy vào từ config **mặc định** của tool:
+  giờ bị ghi đè — và lint chạy bình thường.
+- Nếu chưa có, file sẽ được tự copy vào từ config **mặc định** của tool:
   - **Cách 1** (chạy từ thư mục clone): config mặc định nằm ở gốc repo. Lần
     chạy đầu tiên `run.sh`/`run.ps1` sẽ tự tạo config gốc đó từ
     `.markdownlint-cli2.jsonc.example` nếu chưa có.
   - **Cách 2** (`md-lint` toàn cục): config mặc định nằm ở
     `~/.md-lint/.markdownlint-cli2.jsonc`
     (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` trên Windows).
+  - **Không truyền `--force`/`-Force`**: lệnh dừng lại ngay sau khi seed
+    config — chưa lint gì cả, để bạn xem/sửa `.markdownlint-cli2.jsonc` vừa
+    copy vào thư mục đó trước. Chạy lại đúng lệnh đó sau khi đã ưng ý.
+  - **Có `--force`/`-Force`**: config được seed (nếu chưa có) và lint chạy
+    ngay lập tức với config đó, trong cùng 1 lần gọi.
 
 Vậy nên mỗi thư mục markdown có thể có rule riêng, và sửa config của một thư
-mục sau lần chạy đầu chỉ ảnh hưởng đúng thư mục đó. Muốn đổi config **mặc
+mục sau khi đã được seed chỉ ảnh hưởng đúng thư mục đó. Muốn đổi config **mặc
 định** dùng để seed cho các thư mục chưa có config, sửa file ở gốc repo
 (Cách 1) hoặc `~/.md-lint` (Cách 2) như trên.
 
@@ -175,8 +190,11 @@ Không cần build lại thủ công — `run.sh`/`run.ps1`/`md-lint` đều t�
 ## Lưu ý
 
 - Container chỉ đụng vào file trong thư mục bạn đang lint, không đụng gì khác
-  — bao gồm cả việc tự ghi file `.markdownlint-cli2.jsonc` vào thư mục đó ở
-  lần chạy đầu nếu chưa có (xem [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule)).
+  — bao gồm cả việc tự ghi file `.markdownlint-cli2.jsonc` vào thư mục đó nếu
+  chưa có (xem [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule)).
+- Lần chạy đầu tiên với thư mục chưa có `.markdownlint-cli2.jsonc` chỉ seed
+  file đó rồi dừng, trừ khi bạn truyền `--force`/`-Force` — xem
+  [Tuỳ chỉnh rule](#tuỳ-chỉnh-rule).
 - Nên chạy thử với `--check` trước khi fix thật nếu thư mục markdown chưa được backup/commit.
 - Một số lỗi (ví dụ `MD040` fenced-code-language khi chưa tắt rule) không thể
   tự động fix vì tool không đoán được ngôn ngữ code block — các lỗi này sẽ

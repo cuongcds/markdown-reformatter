@@ -53,6 +53,9 @@ chmod +x run.sh
 
 # Check only, don't fix
 ./run.sh /absolute/path/to/markdown/folder --check
+
+# Folder has no .markdownlint-cli2.jsonc yet: seed it AND lint right away
+./run.sh /absolute/path/to/markdown/folder --force
 ```
 
 ### Option 1 — PowerShell (Windows)
@@ -66,6 +69,9 @@ cd markdown-reformatter
 
 # Check only, don't fix
 .\run.ps1 -Path "C:\path\to\markdown\folder" -Check
+
+# Folder has no .markdownlint-cli2.jsonc yet: seed it AND lint right away
+.\run.ps1 -Path "C:\path\to\markdown\folder" -Force
 ```
 
 `run.sh`/`run.ps1` use their own directory as the Docker build context, so
@@ -116,12 +122,16 @@ md-lint ./
 # Target another directory, or check only
 md-lint /path/to/other/folder
 md-lint ./ --check
+
+# Folder has no .markdownlint-cli2.jsonc yet: seed it AND lint right away
+md-lint ./ --force
 ```
 
 ```powershell
 # PowerShell — same idea (md-lint.cmd calls bash under the hood)
 md-lint .\
 md-lint .\ --check
+md-lint .\ --force
 ```
 
 If no path is given, it defaults to the current directory (`.`).
@@ -132,17 +142,24 @@ If no path is given, it defaults to the current directory (`.`).
 inside that folder:
 
 - If the folder being linted (the path you pass to `run.sh`/`run.ps1`/`md-lint`)
-  already has a `.markdownlint-cli2.jsonc`, it's used as-is — never overwritten.
-- If it doesn't, one is copied in automatically on first run, from the tool's
-  own default config:
+  already has a `.markdownlint-cli2.jsonc`, it's used as-is — never overwritten
+  — and linting runs normally.
+- If it doesn't, one is copied in automatically from the tool's own default
+  config:
   - **Option 1** (running from the clone): the default lives at the repo
     root. The first time you run `run.sh`/`run.ps1`, that root config is
     itself created from `.markdownlint-cli2.jsonc.example` if missing.
   - **Option 2** (global `md-lint`): the default lives at
     `~/.md-lint/.markdownlint-cli2.jsonc` (`%USERPROFILE%\.md-lint\.markdownlint-cli2.jsonc` on Windows).
+  - **Without `--force`/`-Force`**, the run stops right after seeding the
+    config — nothing gets linted yet, so you can review/edit the freshly
+    copied `.markdownlint-cli2.jsonc` for that folder first. Run the same
+    command again once you're happy with it.
+  - **With `--force`/`-Force`**, the config is seeded (if missing) and linting
+    runs immediately with it, in the same call.
 
 So different markdown folders can each have their own rules, and editing a
-folder's config after that first run only affects that folder. To change the
+folder's config after it's been seeded only affects that folder. To change the
 *default* used for folders that don't have a config yet, edit the repo-root
 (Option 1) or `~/.md-lint` (Option 2) config instead — see the paths above.
 
@@ -183,8 +200,11 @@ No manual rebuild needed — `run.sh`/`run.ps1`/`md-lint` all run `docker build`
 
 - The container only touches files inside the folder you're linting — nothing
   else is touched. That includes writing a `.markdownlint-cli2.jsonc` into
-  that folder on first run if it doesn't have one yet (see
+  that folder if it doesn't have one yet (see
   [Customizing rules](#customizing-rules)).
+- The first run against a folder with no `.markdownlint-cli2.jsonc` only seeds
+  that file and stops, unless you pass `--force`/`-Force` — see
+  [Customizing rules](#customizing-rules).
 - Run with `--check` first before fixing for real if the markdown folder isn't backed up/committed yet.
 - Some issues (e.g. `MD040` fenced-code-language, if not disabled) can't be
   auto-fixed because the tool can't guess the code block's language — these

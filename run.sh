@@ -2,7 +2,13 @@
 # Prerequisite: Docker Desktop (Windows/macOS) or Docker Engine (Linux) must
 # be installed and running -- https://docs.docker.com/get-docker/
 #
-# Run this from the cloned repo (any OS with bash + Docker): ./run.sh /path/to/markdown/dir [--check]
+# Run this from the cloned repo (any OS with bash + Docker):
+#   ./run.sh /path/to/markdown/dir [--check] [--force]
+#
+# --force: if the target folder has no .markdownlint-cli2.jsonc yet, seed it
+#          from the default config AND lint right away with it. Without
+#          --force, a missing config is only seeded -- the run stops there so
+#          you can review/edit it first.
 set -euo pipefail
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -10,8 +16,15 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-TARGET_DIR="${1:?Usage: ./run.sh /path/to/markdown/dir [--check]}"
-MODE="${2:-}"
+TARGET_DIR="${1:?Usage: ./run.sh /path/to/markdown/dir [--check] [--force]}"
+MODE=""
+FORCE=""
+for arg in "${@:2}"; do
+  case "$arg" in
+    --check) MODE="--check" ;;
+    --force) FORCE="--force" ;;
+  esac
+done
 
 # Use this script's own directory as the Docker build context, so it works
 # regardless of the caller's current directory (e.g. `../run.sh path` or a
@@ -43,7 +56,7 @@ if ! BUILD_LOG=$(docker build -t markdown-reformatter "$PROJECT_DIR" 2>&1); then
 fi
 
 if [ "$MODE" = "--check" ]; then
-  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter --check "**/*.md"
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter $FORCE --check "**/*.md"
 else
-  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter "**/*.md"
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter $FORCE "**/*.md"
 fi

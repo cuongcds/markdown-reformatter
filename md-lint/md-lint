@@ -3,8 +3,12 @@
 # folder using markdownlint, running inside Docker.
 #
 # Usage:
-#   md-lint [path] [--check]
+#   md-lint [path] [--check] [--force]
 #   path defaults to the current directory.
+#   --force: if the target folder has no .markdownlint-cli2.jsonc yet, seed it
+#            from the default config AND lint right away with it. Without
+#            --force, a missing config is only seeded -- the run stops there
+#            so you can review/edit it first.
 set -euo pipefail
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -29,8 +33,16 @@ if [ ! -f "$PROJECT_DIR/.markdownlint-cli2.jsonc" ] && [ -f "$PROJECT_DIR/.markd
   echo "Created $PROJECT_DIR/.markdownlint-cli2.jsonc from the example -- edit it to customize rules." >&2
 fi
 
-TARGET_DIR="${1:-.}"
-MODE="${2:-}"
+TARGET_DIR="."
+MODE=""
+FORCE=""
+for arg in "$@"; do
+  case "$arg" in
+    --check) MODE="--check" ;;
+    --force) FORCE="--force" ;;
+    *) TARGET_DIR="$arg" ;;
+  esac
+done
 
 RESOLVED="$(cd "$TARGET_DIR" && pwd)"
 
@@ -49,7 +61,7 @@ if ! BUILD_LOG=$(docker build -t markdown-reformatter "$PROJECT_DIR" 2>&1); then
 fi
 
 if [ "$MODE" = "--check" ]; then
-  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter --check "**/*.md"
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter $FORCE --check "**/*.md"
 else
-  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter "**/*.md"
+  docker run --rm -v "${RESOLVED}:/data" markdown-reformatter $FORCE "**/*.md"
 fi
